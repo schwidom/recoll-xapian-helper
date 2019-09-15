@@ -17,8 +17,10 @@ $ ./recoll-xapian-helper --help --help-data
 -@, --help-data
 -p, --prefix
 -z, --debug
+</pre></code></div>
 
-The Data: (--help-data)
+#The Data: (--help-data)
+<div><code><pre>
 
  The data option in case of the recoll database outputs a lot of 
  metadata about a specific document. The most interesting part in the
