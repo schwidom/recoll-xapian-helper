@@ -184,7 +184,7 @@ int main( int argc, char** argv)
   {
    std::cout << R"(The Data: (--help-data)
 
- The data option in case of the recoll database outputs a lot of 
+ In case of the recoll database the data option outputs a lot of 
  metadata about a specific document. The most interesting part in the
  data is the url. Because the recoll database I have to deal with 
  (version 1.17) is not able to detect deleted files and this way 
