@@ -1,7 +1,8 @@
 $ ./recoll-xapian-helper --help --help-data
 
-The Recoll Xapian Helper
+# The Recoll Xapian Helper
 
+<div><code><pre>
 -h, --help : prints help
 -a, --author
 -v, --version
@@ -58,5 +59,5 @@ The Data: (--help-data)
 
  Happy indexing.
 
-
+</pre></code></div>
 
