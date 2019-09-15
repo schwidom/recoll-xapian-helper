@@ -3,6 +3,8 @@
 
 #include <iostream>
 #include <vector>
+#include <set>
+#include <map>
 #include <algorithm> // find_if
 
 #include <cstdlib> // exit
@@ -24,7 +26,7 @@ int main( int argc, char** argv)
  std::string prefix = "";
  std::string dblocation = "";
 
- static std::vector<struct option> long_options_vector 
+ static std::vector<struct option> const long_options_vector 
  {
   {"help",     no_argument, 0, 'h' },
   {"author",     no_argument, 0,  'a' },
@@ -37,9 +39,23 @@ int main( int argc, char** argv)
   {"docid",  no_argument, 0,  'i' },
   {"description2",  no_argument, 0,  '2' },
   {"data",  no_argument, 0,  'd'},
+  {"help-data",  no_argument, 0,  '@'},
   {"prefix",  required_argument, 0,  'p' },
   {"debug",    no_argument, 0,  'z' },
   {0,         0,                 0,  0 }
+ };
+
+ static std::map< std::string, std::string> const help_map {
+  { "help", "prints help"},
+  { "dblocation", "mandatory parameter, path of xapian database location (directory) "},
+  { "data", "provides the interesting data see --help-data"},
+ };
+
+ auto get_help = []( std::string longoptionname) -> std::string 
+ {
+  auto found = help_map.find( longoptionname);
+  if( found != help_map.end()){ return " : " + found->second;}
+  else return "";
  };
 
  {
@@ -53,13 +69,13 @@ int main( int argc, char** argv)
 
    // static struct option long_options[] =
 
-   c = getopt_long(argc, argv, "havo:c1lwi2dp:z", long_options_vector.data(), &option_index);
+   c = getopt_long(argc, argv, "havo:c1lwi2dp:@z", long_options_vector.data(), &option_index);
 
    if (c == -1)
        break;
 
    auto found = std::find_if( long_options_vector.begin(), long_options_vector.end(), 
-    [c]( struct option& o) -> bool { return o.val == c;});
+    [c]( struct option const & o) -> bool { return o.val == c;});
 
    switch (c) {
     case 0:
@@ -80,6 +96,7 @@ int main( int argc, char** argv)
     case 'i':
     case '2':
     case 'd':
+    case '@':
     case 'z':
 
      if( found == long_options_vector.end()) 
@@ -102,7 +119,7 @@ int main( int argc, char** argv)
      {
       if( ! optarg)
       {
-       std::cout << "parameter needed: path of xapian database location (directory) " << c << std::endl;
+       std::cout << get_help( "dblocation") << c << std::endl;
        std::exit( 1);
       }
       dblocation = optarg;
@@ -137,7 +154,7 @@ int main( int argc, char** argv)
  }
 
  // TODO : "author" => AUTHOR
- if( chkoption( "author") || chkoption( "help") || chkoption( "version"))
+ if( chkoption( "author") || chkoption( "help") || chkoption( "version") || chkoption( "help-data"))
  {
   std::cout << "The Recoll Xapian Helper" << std::endl;
   std::cout << std::endl;
@@ -156,8 +173,58 @@ int main( int argc, char** argv)
   {
    for( auto& o : long_options_vector) { 
     if( nullptr == o.name) { break;}
-    std::cout << "-" << static_cast<char>(o.val) << ", --" << o.name << std::endl;   
+    std::cout << "-" << static_cast<char>(o.val) 
+     << ", --" << o.name 
+     << get_help( o.name) << std::endl;   
    }
+   std::cout << std::endl;
+  }
+
+  if( chkoption( "help-data"))
+  {
+   std::cout << R"(The Data: (--help-data)
+
+ The data option in case of the recoll database outputs a lot of 
+ metadata about a specific document. The most interesting part in the
+ data is the url. Because the recoll database I have to deal with 
+ (version 1.17) is not able to detect deleted files and this way 
+ the database increases continuously on every indexing run, I searched
+ a way to solve this problem. First by analysing recoll and xapian
+ tools but no one could give me a list of the indexed files. 
+
+ The recollindex tool is able to delete files from the index but
+ you have to know the file location. 
+
+ The recoll-xapian-helper helps you to get all urls
+ by:
+
+  ./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data |
+   grep '^url=file'
+
+ provides files in a form like (if indexed)
+
+  url=file:///etc/passwd
+
+ and you can create a list of files by 
+
+  ./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data |
+   grep '^url=file' | sed 's+^url=file://\(.*\)+\1+1'
+
+ like:
+
+  /etc/passwd
+
+ At this point you can throw the output in a file, select a specific
+ directory whose entries you want to have deleted and reindexed by:
+
+ cat list.txt | recollindex -e # for deleting files
+ find . <specific directory> | recollindex -i -f
+
+
+ Happy indexing.
+
+)" << std::endl;
+   std::cout << std::endl;
   }
 
   std::exit( 0);
@@ -165,7 +232,7 @@ int main( int argc, char** argv)
 
  if( "" == dblocation)
  {
-  std::cout << "dblocation must be given" << std::endl;
+  std::cout << "dblocation is missing " << get_help( "dblocation") << std::endl;
   std::exit( 1);
  }
 
