@@ -259,7 +259,7 @@ int main( int argc, char** argv)
 
  if( "" == dblocation)
  {
-  std::cout << "dblocation is missing " << get_help( "dblocation") << ", see --help" << std::endl;
+  std::cout << "--dblocation is missing " << get_help( "dblocation") << ", (--dblocation ~/.recoll/xapiandb) , see --help" << std::endl;
   std::exit( 1);
  }
 
