@@ -1,22 +1,25 @@
-$ ./recoll-xapian-helper --help --help-data
+$ ./recoll-xapian-helper --markdown --help --help-data
 
 # The Recoll Xapian Helper
 
+# Help: (--help)
 <div><code><pre>
--h, --help : prints help
--a, --author
--v, --version
--o, --dblocation : mandatory parameter, path of xapian database location (directory) 
--c, --document-count
--1, --description1
--l, --doclength
--w, --wdf
--i, --docid
--2, --description2
--d, --data : provides the interesting data see --help-data
--@, --help-data
--p, --prefix
--z, --debug
+-h ,  --help : prints help
+-a ,  --author
+-v ,  --version
+-o ,  --dblocation : mandatory parameter, path of xapian database location (directory) 
+-c ,  --document-count
+-1 ,  --description1
+-l ,  --doclength
+-w ,  --wdf
+-i ,  --docid
+-2 ,  --description2
+-d ,  --data : provides the interesting data see --help-data
+-@ ,  --help-data
+-p ,  --prefix : prefix determines the prefix for non document output lines, default ""
+-z ,  --debug
+      --help-bugs
+      --markdown : markdown output for help pages
 </pre></code></div>
 
 # The Data: (--help-data)
@@ -60,6 +63,7 @@ $ ./recoll-xapian-helper --help --help-data
 
 
  Happy indexing.
+
 
 </pre></code></div>
 

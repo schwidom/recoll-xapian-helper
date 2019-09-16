@@ -31,6 +31,7 @@ int main( int argc, char** argv)
 
  enum class NonChars : int { NONE = 0
   , HELP_BUGS = 0x10000
+  , MARKDOWN = 0x10001
  };
 
  std::vector<struct option> const long_options_vector 
@@ -50,6 +51,7 @@ int main( int argc, char** argv)
   {"prefix",  required_argument, 0,  'p' },
   {"debug",    no_argument, 0,  'z' },
   {"help-bugs",  no_argument, 0,  static_cast<int>(NonChars::HELP_BUGS)},
+  {"markdown",  no_argument, 0,  static_cast<int>(NonChars::MARKDOWN)},
   {0,         0,                 0,  0 }
  };
 
@@ -58,6 +60,7 @@ int main( int argc, char** argv)
   { "dblocation", "mandatory parameter, path of xapian database location (directory) "},
   { "data", "provides the interesting data see --help-data"},
   { "prefix", "prefix determines the prefix for non document output lines, default \"\""},
+  { "markdown", "markdown output for help pages"},
  };
 
  auto get_help = []( std::string longoptionname) -> std::string 
@@ -125,6 +128,7 @@ int main( int argc, char** argv)
     case '@':
     case 'z':
     case static_cast<int>(NonChars::HELP_BUGS):
+    case static_cast<int>(NonChars::MARKDOWN):
 
      exit_if_programmer_forgot_longoption();
      option_set.emplace(found -> name); 
@@ -171,7 +175,23 @@ int main( int argc, char** argv)
   || chkoption( "help-bugs")
  )
  {
-  std::cout << "The Recoll Xapian Helper" << std::endl;
+  bool markdown = chkoption( "markdown");
+
+  std::string markdown_header = ( markdown ? "# " : "");
+
+  auto block_begin = [markdown](){
+   if( markdown) {
+    std::cout << "<div><code><pre>" << std::endl;
+   }
+  };
+
+  auto block_end = [markdown](){
+   if( markdown) {
+    std::cout << "</pre></code></div>" << std::endl;
+   }
+  };
+
+  std::cout << markdown_header << "The Recoll Xapian Helper" << std::endl;
   std::cout << std::endl;
 
   if( chkoption( "author")) {
@@ -186,6 +206,9 @@ int main( int argc, char** argv)
 
   if( chkoption( "help"))
   {
+   std::cout << markdown_header << "Help: (--help)" << std::endl;
+
+   block_begin();
    for( auto& o : long_options_vector) { 
     if( nullptr == o.name) { break;}
     std::cout << ( isprint( o.val)  && isascii( o.val) 
@@ -194,13 +217,16 @@ int main( int argc, char** argv)
      << " --" << o.name 
      << get_help( o.name) << std::endl;   
    }
+   block_end();
    std::cout << std::endl;
   }
 
   if( chkoption( "help-data"))
   {
-   std::cout << R"(The Data: (--help-data)
+   std::cout << markdown_header << "The Data: (--help-data)" << std::endl;
 
+   block_begin();
+   std::cout << R"(
  In case of the recoll database the data option outputs a lot of 
  metadata about a specific document. The most interesting part in the
  data is the url. Because the recoll database I have to deal with 
@@ -241,16 +267,20 @@ int main( int argc, char** argv)
  Happy indexing.
 
 )" << std::endl;
+   block_end();
    std::cout << std::endl;
   }
 
   if( chkoption( "help-bugs"))
   {
-   std::cout << R"(The Bugs: (--help-bugs)
+   std::cout << markdown_header << "The Bugs: (--help-bugs)" << std::endl;
 
+   block_begin();
+   std::cout << R"(
  It is currently not clear how to match the url of a recoll document
  in the xapian database if the name of the original file contains a newline.
 )" << std::endl;
+   block_end();
    std::cout << std::endl;
   }
 
