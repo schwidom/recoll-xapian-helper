@@ -36,6 +36,7 @@ int main( int argc, char** argv)
   , MARKDOWN = 0x10001
   , HELP_REGEX = 0x10002
   , MAX_MATCHES = 0x10003
+  , HELP_FUTURE_PLANS = 0x10004
  };
 
  std::vector<struct option> const long_options_vector 
@@ -60,6 +61,7 @@ int main( int argc, char** argv)
   {"debug",    no_argument, 0,  'z' },
   {"help-bugs",  no_argument, 0,  static_cast<int>(NonChars::HELP_BUGS)},
   {"markdown",  no_argument, 0,  static_cast<int>(NonChars::MARKDOWN)},
+  {"help-future-plans",  no_argument, 0,  static_cast<int>(NonChars::HELP_FUTURE_PLANS)},
   {0,         0,                 0,  0 }
  };
 
@@ -144,6 +146,7 @@ int main( int argc, char** argv)
     case static_cast<int>(NonChars::HELP_BUGS):
     case static_cast<int>(NonChars::MARKDOWN):
     case static_cast<int>(NonChars::HELP_REGEX):
+    case static_cast<int>(NonChars::HELP_FUTURE_PLANS):
 
      exit_if_programmer_forgot_longoption();
      option_set.emplace(found -> name); 
@@ -243,6 +246,7 @@ int main( int argc, char** argv)
   || chkoption( "help-data")
   || chkoption( "help-bugs")
   || chkoption( "help-regex")
+  || chkoption( "help-future-plans")
  )
  {
   bool markdown = chkoption( "markdown");
@@ -353,6 +357,26 @@ int main( int argc, char** argv)
    std::cout << std::endl;
   }
 
+  if( chkoption( "help-future-plans"))
+  {
+   std::cout << markdown_header << "Future Plans : (--help-future-plans)" << std::endl;
+
+   block_begin();
+   std::cout << R"(
+ Currently for an enduser to have a valuable benefit from the program 
+ their has to program some bash magic itself and has at least the relief of
+ the existing bin/drop-non-existent-files-from-index.sh tool which contains
+ an example usage of the recoll-xapian-helper but is not very well 
+ documented yet. 
+
+ When I am in the mood I will maybe add some options which allow to 
+ search and unindex files without the need of external tools.
+
+ But to go over bash scripting is of course the most flexible approach.
+)" << std::endl;
+   block_end();
+   std::cout << std::endl;
+  }
 
   if( chkoption( "help-regex"))
   {

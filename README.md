@@ -1,4 +1,4 @@
-$ ./recoll-xapian-helper --markdown --author --version --help --help-data
+$ ./recoll-xapian-helper --markdown --author --version --help --help-data --help-future-plans
 
 # The Recoll Xapian Helper
 
@@ -28,6 +28,7 @@ Version: 0.3
 -z ,  --debug
       --help-bugs
       --markdown : markdown output for help pages
+      --help-future-plans
 </pre></code></div>
 
 # The Data: (--help-data)
@@ -84,5 +85,21 @@ Version: 0.3
 
  Happy indexing.
 
+
+</pre></code></div>
+
+# Future Plans : (--help-future-plans)
+<div><code><pre>
+
+ Currently for an enduser to have a valuable benefit from the program 
+ their has to program some bash magic itself and has at least the relief of
+ the existing bin/drop-non-existent-files-from-index.sh tool which contains
+ an example usage of the recoll-xapian-helper but is not very well 
+ documented yet. 
+
+ When I am in the mood I will maybe add some options which allow to 
+ search and unindex files without the need of external tools.
+
+ But to go over bash scripting is of course the most flexible approach.
 
 </pre></code></div>
