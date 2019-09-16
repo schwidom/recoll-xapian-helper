@@ -373,6 +373,21 @@ int main( int argc, char** argv)
  search and unindex files without the need of external tools.
 
  But to go over bash scripting is of course the most flexible approach.
+
+
+ Because the recoll database can grow very large with tons of documents,
+ my current approach to query the database for files can be last very
+ long. I figured out that by questioning via
+
+  ./recoll-xapian-helper ... --data-regex '^url=file://(/.*)' \
+   --regex-sub 1 --max-matches 1
+
+ the first 10000 documents took 0.1 seconds. So on a Database with 5 million
+ document entries it will take at least 50 seconds.
+
+ So it could be handy to have an optional duration estimation of the search
+ process.
+
 )" << std::endl;
    block_end();
    std::cout << std::endl;
