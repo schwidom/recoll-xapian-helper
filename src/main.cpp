@@ -297,13 +297,15 @@ int main( int argc, char** argv)
 
    block_begin();
    std::cout << R"(
- In case of the recoll database the data option outputs a lot of 
- metadata about a specific document. The most interesting part in the
+ In case of the recoll database the '--data' option outputs a lot of 
+ metadata about a specific document. The most interesting part of the
  data is the url. Because the recoll database I have to deal with 
  (version 1.17) is not able to detect deleted files and this way 
  the database increases continuously on every indexing run, I searched
- a way to solve this problem. First by analysing recoll and xapian
- tools but no one could give me a list of the indexed files. 
+ a way to solve this problem. First by analyzing recoll and xapian
+ tools but no one could give me a list of the indexed files which 
+ I could have been used to remove deleted files from the index
+ via 'recollindex -e'.
 
  The recollindex tool is able to delete files from the index but
  you have to know the file location. 
