@@ -8,6 +8,7 @@
 #include <algorithm> // find_if
 
 #include <cstdlib> // exit
+#include <cctype> // isprint, isascii
 
 #include <getopt.h> // getopt_long
 #include <stdio.h> // printf
@@ -26,7 +27,11 @@ int main( int argc, char** argv)
  std::string prefix = "";
  std::string dblocation = "";
 
- static std::vector<struct option> const long_options_vector 
+ enum class NonChars : int { NONE = 0
+  , HELP_BUGS = 0x10000
+ };
+
+ std::vector<struct option> const long_options_vector 
  {
   {"help",     no_argument, 0, 'h' },
   {"author",     no_argument, 0,  'a' },
@@ -42,6 +47,7 @@ int main( int argc, char** argv)
   {"help-data",  no_argument, 0,  '@'},
   {"prefix",  required_argument, 0,  'p' },
   {"debug",    no_argument, 0,  'z' },
+  {"help-bugs",  no_argument, 0,  static_cast<int>(NonChars::HELP_BUGS)},
   {0,         0,                 0,  0 }
  };
 
@@ -49,6 +55,7 @@ int main( int argc, char** argv)
   { "help", "prints help"},
   { "dblocation", "mandatory parameter, path of xapian database location (directory) "},
   { "data", "provides the interesting data see --help-data"},
+  { "prefix", "prefix determines the prefix for non document output lines, default \"\""},
  };
 
  auto get_help = []( std::string longoptionname) -> std::string 
@@ -58,13 +65,21 @@ int main( int argc, char** argv)
   else return "";
  };
 
+ /** if that function is called then the parameter optstring getopt_long misses a character and/or a colon */
+ auto exit_if_programmer_forgot_optstring_entry = []() -> void
+ {
+  if( ! optarg)
+  {
+   std::cerr << "no parameter given, exiting" << std::endl;
+   std::exit( 1);
+  }
+ };
+
  {
   int c;
-  int digit_optind = 0;
 
   while (1) {
 
-   int this_option_optind = optind ? optind : 1;
    int option_index = 0;
 
    // static struct option long_options[] =
@@ -76,6 +91,15 @@ int main( int argc, char** argv)
 
    auto found = std::find_if( long_options_vector.begin(), long_options_vector.end(), 
     [c]( struct option const & o) -> bool { return o.val == c;});
+
+   auto exit_if_programmer_forgot_longoption = [&long_options_vector, &found, &c]() -> void
+   {
+    if( found == long_options_vector.end())
+    {
+     std::cout << "longoption not found, c: " << c << std::endl;
+     std::exit( 1);
+    }
+   };
 
    switch (c) {
     case 0:
@@ -98,51 +122,28 @@ int main( int argc, char** argv)
     case 'd':
     case '@':
     case 'z':
+    case static_cast<int>(NonChars::HELP_BUGS):
 
-     if( found == long_options_vector.end()) 
-     { std::cout << "not found " << c << std::endl; }
-     else
-     {
-      option_set.emplace(found -> name); 
-     }
+     exit_if_programmer_forgot_longoption();
+     option_set.emplace(found -> name); 
 
      break;
 
     case 'o':
 
-     if( found == long_options_vector.end())
-     {
-      std::cout << "not found " << c << std::endl;
-      std::exit( 1);
-     }
-     else
-     {
-      if( ! optarg)
-      {
-       std::cout << get_help( "dblocation") << c << std::endl;
-       std::exit( 1);
-      }
-      dblocation = optarg;
-     }
+     exit_if_programmer_forgot_longoption();
+     exit_if_programmer_forgot_optstring_entry();
+
+     dblocation = optarg;
 
      break;
 
     case 'p':
 
-     if( found == long_options_vector.end())
-     {
-      std::cout << "not found " << c << std::endl;
-      std::exit( 1);
-     }
-     else
-     {
-      if( ! optarg)
-      {
-       std::cout << "parameter needed: prefix " << c << std::endl;
-       std::exit( 1);
-      }
-      prefix = optarg;
-     }
+     exit_if_programmer_forgot_longoption();
+     exit_if_programmer_forgot_optstring_entry();
+
+     prefix = optarg;
 
      break;
 
@@ -151,10 +152,22 @@ int main( int argc, char** argv)
       std::exit( 1);
    }
   }
+
+  if (optind < argc) {
+   std::cout << "trailing chars on the commandline" << std::endl;
+   std::exit( 1);
+  }
  }
 
  // TODO : "author" => AUTHOR
- if( chkoption( "author") || chkoption( "help") || chkoption( "version") || chkoption( "help-data"))
+
+ if( false 
+  || chkoption( "author")
+  || chkoption( "help")
+  || chkoption( "version")
+  || chkoption( "help-data")
+  || chkoption( "help-bugs")
+ )
  {
   std::cout << "The Recoll Xapian Helper" << std::endl;
   std::cout << std::endl;
@@ -173,8 +186,10 @@ int main( int argc, char** argv)
   {
    for( auto& o : long_options_vector) { 
     if( nullptr == o.name) { break;}
-    std::cout << "-" << static_cast<char>(o.val) 
-     << ", --" << o.name 
+    std::cout << ( isprint( o.val)  && isascii( o.val) 
+     ? std::string("-") + static_cast<char>(o.val) + " , " 
+     : "     " )
+     << " --" << o.name 
      << get_help( o.name) << std::endl;   
    }
    std::cout << std::endl;
@@ -227,12 +242,22 @@ int main( int argc, char** argv)
    std::cout << std::endl;
   }
 
+  if( chkoption( "help-bugs"))
+  {
+   std::cout << R"(The Bugs: (--help-bugs)
+
+ It is currently not clear how to match the url of a recoll document
+ in the xapian database if the name of the original file contains a newline.
+)" << std::endl;
+   std::cout << std::endl;
+  }
+
   std::exit( 0);
  }
 
  if( "" == dblocation)
  {
-  std::cout << "dblocation is missing " << get_help( "dblocation") << std::endl;
+  std::cout << "dblocation is missing " << get_help( "dblocation") << ", see --help" << std::endl;
   std::exit( 1);
  }
 
@@ -249,13 +274,10 @@ int main( int argc, char** argv)
  bool opt_docid = chkoption("docid");
  bool opt_description2 = chkoption("description2");
  bool opt_data = chkoption("data");
- bool opt_prefix = chkoption("prefix");
  bool opt_debug = chkoption("debug");
 
- bool debug{opt_debug}; // TODO remove
-
  if( opt_document_count){
-  std::cout << prefix << "doccount: " << OS( debug, db.get_doccount() ) << std::endl; 
+  std::cout << prefix << "doccount: " << OS( opt_debug, db.get_doccount() ) << std::endl; 
  }
 
  if( false 
@@ -271,31 +293,31 @@ int main( int argc, char** argv)
   {
 
    if( opt_description1) {
-    std::cout << prefix << "description1: " << OS( debug, postingIterator.get_description()) << std::endl;
+    std::cout << prefix << "description1: " << OS( opt_debug, postingIterator.get_description()) << std::endl;
    }
 
    if( opt_doclength) {
-    std::cout << prefix << "doclength: " << OS( debug, postingIterator.get_doclength()) << std::endl;
+    std::cout << prefix << "doclength: " << OS( opt_debug, postingIterator.get_doclength()) << std::endl;
    }
 
    if( opt_wdf) {
-    std::cout << prefix << "wdf: " << OS( debug, postingIterator.get_wdf())  << std::endl;
+    std::cout << prefix << "wdf: " << OS( opt_debug, postingIterator.get_wdf())  << std::endl;
    }
 
    if( opt_docid)
    {
-    std::cout << prefix << "docid: " << OS( debug, *postingIterator)  << std::endl;
+    std::cout << prefix << "docid: " << OS( opt_debug, *postingIterator)  << std::endl;
    }
 
    const auto document = db.get_document( *postingIterator);
   
    if( opt_description2) {
-    std::cout << prefix << "description2: " << OS( debug, document.get_description() ) << std::endl;
+    std::cout << prefix << "description2: " << OS( opt_debug, document.get_description() ) << std::endl;
    }
 
    if( opt_data)
    {
-    if( debug) { std::cout << prefix << " data: document.get_data()" << std::endl; } 
+    if( opt_debug) { std::cout << prefix << " data: document.get_data()" << std::endl; } 
     else { std::cout << prefix << " data:" << std::endl; }
     std::cout << document.get_data() << std::endl; // contains url
    }
