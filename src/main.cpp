@@ -8,6 +8,8 @@
 #include <set>
 #include <map>
 #include <algorithm> // find_if
+#include <regex> 
+#include <tuple>
 
 #include <cstdlib> // exit
 #include <cctype> // isprint, isascii
@@ -32,6 +34,8 @@ int main( int argc, char** argv)
  enum class NonChars : int { NONE = 0
   , HELP_BUGS = 0x10000
   , MARKDOWN = 0x10001
+  , HELP_REGEX = 0x10002
+  , MAX_MATCHES = 0x10003
  };
 
  std::vector<struct option> const long_options_vector 
@@ -48,6 +52,10 @@ int main( int argc, char** argv)
   {"description2",  no_argument, 0,  '2' },
   {"data",  no_argument, 0,  'd'},
   {"help-data",  no_argument, 0,  '@'},
+  {"data-regex",  required_argument, 0,  'r'},
+  {"max-matches",  required_argument, 0,  static_cast<int>(NonChars::MAX_MATCHES)},
+  {"regex-sub",  required_argument, 0,  's'},
+  {"help-regex",  no_argument, 0,  static_cast<int>(NonChars::HELP_REGEX)},
   {"prefix",  required_argument, 0,  'p' },
   {"debug",    no_argument, 0,  'z' },
   {"help-bugs",  no_argument, 0,  static_cast<int>(NonChars::HELP_BUGS)},
@@ -61,6 +69,8 @@ int main( int argc, char** argv)
   { "data", "provides the interesting data see --help-data"},
   { "prefix", "prefix determines the prefix for non document output lines, default \"\""},
   { "markdown", "markdown output for help pages"},
+  { "data-regex", "in case of --data, repeatable, needs regex parameter, filters data output, see --help-regex"},
+  { "regex-sub", "in case of --data-regex, repeatable, needs count parameter, chooses the sub expression, see --help-regex"},
  };
 
  auto get_help = []( std::string longoptionname) -> std::string 
@@ -80,6 +90,10 @@ int main( int argc, char** argv)
   }
  };
 
+ std::vector<std::tuple<std::string,std::set<int>>> regex_vector2; // TODO : uint , rename to opt_regex_vector
+
+ int opt_max_matches= 0; // 0 = all
+
  {
   int c;
 
@@ -89,7 +103,7 @@ int main( int argc, char** argv)
 
    // static struct option long_options[] =
 
-   c = getopt_long(argc, argv, "havo:c1lwi2dp:@z", long_options_vector.data(), &option_index);
+   c = getopt_long(argc, argv, "havo:c1lwi2dr:s:p:@z", long_options_vector.data(), &option_index);
 
    if (c == -1)
        break;
@@ -129,6 +143,7 @@ int main( int argc, char** argv)
     case 'z':
     case static_cast<int>(NonChars::HELP_BUGS):
     case static_cast<int>(NonChars::MARKDOWN):
+    case static_cast<int>(NonChars::HELP_REGEX):
 
      exit_if_programmer_forgot_longoption();
      option_set.emplace(found -> name); 
@@ -153,6 +168,60 @@ int main( int argc, char** argv)
 
      break;
 
+    case 'r':
+
+     exit_if_programmer_forgot_longoption();
+     exit_if_programmer_forgot_optstring_entry();
+
+     regex_vector2.emplace_back( std::make_tuple( optarg, std::set<int>{}));
+
+     break;
+
+    case static_cast<int>(NonChars::MAX_MATCHES):
+
+     exit_if_programmer_forgot_longoption();
+     exit_if_programmer_forgot_optstring_entry();
+
+     { // TODO : generalize
+      int number;
+      std::istringstream iss( optarg);
+      iss >> number;
+      if (iss.fail()) {
+       std::cerr << "--" << found -> name << "could not convert to number: " << std::endl;
+       std::cerr << optarg << std::endl;
+      }
+
+      opt_max_matches = number;
+
+     }
+
+     break;
+
+    case 's':
+
+     exit_if_programmer_forgot_longoption();
+     exit_if_programmer_forgot_optstring_entry();
+
+     if( regex_vector2.empty()){
+      std::cerr << "--" << found -> name << "no --data-regex given, exiting" << std::endl;
+      std::exit( 1);
+     }
+
+     { // TODO : generalize
+      int number;
+      std::istringstream iss( optarg);
+      iss >> number;
+      if (iss.fail()) {
+       std::cerr << "--" << found -> name << "could not convert to number: " << std::endl;
+       std::cerr << optarg << std::endl;
+      }
+
+     std::get<1>( regex_vector2.back()).insert(number);
+
+     }
+
+     break;
+
     default:
       printf("?? getopt returned character code 0%o ??\n", c);
       std::exit( 1);
@@ -173,6 +242,7 @@ int main( int argc, char** argv)
   || chkoption( "version")
   || chkoption( "help-data")
   || chkoption( "help-bugs")
+  || chkoption( "help-regex")
  )
  {
   bool markdown = chkoption( "markdown");
@@ -253,6 +323,10 @@ int main( int argc, char** argv)
   ./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data |
    grep '^url=file' | sed 's+^url=file://\(.*\)+\1+1'
 
+ or 
+ 
+  ./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data --data-regex 'url=file://(.*)' --regex-sub 1
+
  like:
 
   /etc/passwd
@@ -260,11 +334,101 @@ int main( int argc, char** argv)
  At this point you can throw the output in a file, select a specific
  directory whose entries you want to have deleted and reindexed by:
 
+ It is suggested to perform a run through the tool 'uniq' because one file
+ can be indexed more than once if it is an archive.
+
  cat list.txt | recollindex -e # for deleting files
  find . <specific directory> | recollindex -i -f
 
 
  Happy indexing.
+
+)" << std::endl;
+   block_end();
+   std::cout << std::endl;
+  }
+
+
+  if( chkoption( "help-regex"))
+  {
+   std::cout << markdown_header << "The Regex: (--help-regex)" << std::endl;
+
+   block_begin();
+   std::cout << R"(
+ The options --data-regex and --regex-sub provide to filter the data element which 
+ can be seen when only the --data option is passed. 
+
+ The data contains usually data like:
+
+ url=file:///
+ mtype=application/x-fsdirectory
+ fmtime=01568306963
+ origcharset=
+ fbytes=4096
+ pcbytes=4096
+ dbytes=0
+ sig=40961568306963
+
+ What we want to have is the url.
+
+ If we are not sure whether the url begins every time at the top we should let the regex begin
+ with (^|\n): e.g. "'(^|\n)(.*)'"
+ 
+ example:
+
+ $ ./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data --data-regex '(^|\n)(.*)' --regex-sub 2 | head -n10
+
+ outputs:
+ 
+ url=file:///
+ mtype=application/x-fsdirectory
+ fmtime=01568306963
+ origcharset=
+ fbytes=4096
+ pcbytes=4096
+ dbytes=0
+ sig=40961568306963
+
+ --regex-sub 2 chooses the second submatch from the second open beace th its closing counterpart.
+
+ If we want to only have the urls we choose '(^|\n)(url=.*)' 
+
+ example:
+
+ $ ./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data --data-regex '(^|\n)(url.*)' --regex-sub 2 | head -n 5
+
+ url=file:///
+ url=file:///etc
+ url=file:///etc/wpa_supplicant
+ url=file:///etc/wpa_supplicant/action_wpa.sh
+ url=file:///etc/wpa_supplicant/functions.sh
+
+ now we only want to have the filenames, so we set the second submatch according to:
+
+ ./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data --data-regex '(^|\n)url=file://(/.*)' --regex-sub 2 | head -n 5
+
+ /
+ /etc
+ /etc/wpa_supplicant
+ /etc/wpa_supplicant/action_wpa.sh
+ /etc/wpa_supplicant/functions.sh
+ 
+ 10000 Elements are chosen in 5 sec
+
+ As of now this is a very expensive operation because after the first match of url=file 
+ the program tries to find further matches. With --max-matches 1 we are fine.
+
+ ./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data --data-regex '(^|\n)url=file://(/.*)' --regex-sub 2 --max-matches 1 | head -n 5
+
+ 10000 Elements are chosen in 1 sec
+
+ but much faster is relying on that the url every time is on the first place in the data:
+
+ ./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data --data-regex '^url=file://(/.*)' --regex-sub 1 --max-matches 1 | head -n 5
+
+ 10000 Elements are chosen in 0.1 sec
+
+ The tool bin/drop-non-existent-files-from-index.sh makes use of that.
 
 )" << std::endl;
    block_end();
@@ -321,6 +485,25 @@ int main( int argc, char** argv)
   | opt_data
  )
  {
+
+ std::vector<std::tuple<std::regex,std::set<int>>> regex_vector3; // TODO : uint
+
+  for( auto const & regex_tuple : regex_vector2)
+  { 
+   auto const & regex_string = std::get<0>(regex_tuple);
+   auto const & sub_number_set = std::get<1>(regex_tuple);
+
+   if( opt_debug) { std::cout << "debug: regex_string: " << regex_string << std::endl;}
+
+   std::regex re( regex_string, std::regex_constants::ECMAScript | std::regex_constants::optimize); // ecmascript is default
+
+   // regex_vector3.emplace_back( std::make_tuple( regex_string, sub_number_set));
+   // regex_vector3.emplace_back( std::piecewise_construct, std::forward_as_tuple( regex_string)
+    // , std::forward_as_tuple( sub_number_set));
+
+   regex_vector3.emplace_back( std::make_tuple( re, sub_number_set)); // TODO : piecewise_construct
+  }
+
   for( auto postingIterator = db.postlist_begin( ""); postingIterator != db.postlist_end(""); ++postingIterator)
   {
 
@@ -349,9 +532,85 @@ int main( int argc, char** argv)
 
    if( opt_data)
    {
-    if( opt_debug) { std::cout << prefix << " data: document.get_data()" << std::endl; } 
-    else { std::cout << prefix << " data:" << std::endl; }
-    std::cout << document.get_data() << std::endl; // contains url
+
+    /**
+
+    std::cout << OS( opt_debug, document.get_value( 0)) << std::endl; 
+    std::cout << OS( opt_debug, document.get_value( 1)) << std::endl; 
+    std::cout << OS( opt_debug, document.get_value( 2)) << std::endl; 
+    std::cout << OS( opt_debug, document.get_value( 3)) << std::endl; 
+    std::cout << OS( opt_debug, document.get_value( 4)) << std::endl; 
+    std::cout << OS( opt_debug, document.termlist_count()) << std::endl; 
+    std::cout << OS( opt_debug, document.values_count()) << std::endl; 
+
+    for( auto termlist_value = document.termlist_begin()
+     ; termlist_value != document.termlist_end(); ++termlist_value)
+    {
+     std::cout << OS( opt_debug, *termlist_value) << std::endl;
+    }
+
+    for( auto values_value = document.values_begin()
+     ; values_value != document.values_end(); ++values_value)
+    {
+     std::cout << OS( opt_debug, *values_value) << std::endl;
+    }
+
+    */
+
+    auto got_data = std::string( document.get_data()); // working on a copy!
+
+    for( auto const & regex_tuple : regex_vector3)
+    {
+     auto const & regex_re = std::get<0>(regex_tuple);
+     auto const & sub_number_set = std::get<1>(regex_tuple);
+
+     bool matched = false;
+     int matchcount = 0;
+
+     for( auto regex_iterator = std::sregex_iterator(got_data.begin(), got_data.end(), regex_re)
+      ; regex_iterator != std::sregex_iterator() 
+      ; ++regex_iterator)
+     {
+      std::smatch match_results = *regex_iterator;
+      int subs = 0;
+      for( auto const & match_result : match_results) {
+
+       if( sub_number_set.empty())
+       {
+        matched = true;
+        std::cout << OS( opt_debug, match_result.str()) << std::endl;
+       }else
+       {
+        if( sub_number_set.find(subs) != sub_number_set.end())
+        {
+         matched = true;
+         std::cout << OS( opt_debug, match_result.str()) << std::endl;
+        }
+       }
+
+       ++subs;
+      }
+
+      ++matchcount;
+
+      // be careful changing things here, it can break the runtime behaviour (fast => slow)
+      if( opt_max_matches != 0 && opt_max_matches == matchcount) { break;}
+     }
+
+     if( !matched)
+     {
+      if( opt_debug) {
+       std::cout << "debug: regex did not match" << std::endl;
+      }
+     }
+    }
+
+    if( regex_vector2.empty())
+    {
+     if( opt_debug) { std::cout << prefix << "data: document.get_data()" << std::endl; } 
+     else { std::cout << prefix << " data:" << std::endl; }
+     std::cout << got_data << std::endl; // contains url
+    }
    }
   }
  }

@@ -6,6 +6,7 @@ set -u
 RECOLLINDEX="$(which recollindex)"
 GREP="$(which grep)"
 SED="$(which sed)"
+UNIQ="$(which uniq)"
 
 set -x
 test -f recoll-xapian-helper
@@ -17,9 +18,9 @@ set +x
 PATH="$(realpath "$1")"
 echo "use path $PATH"
 
-./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data |
- "$GREP" '^url=file' | "$GREP" -F "$PATH" |
- "$SED" 's+^url=file://\(.*\)+\1+1' |
+./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data --data-regex '^url=file://(/.*)' --regex-sub 1 --max-matches 1 |
+ "$UNIQ" |
+ "$GREP" -F "$PATH" |
  { while read fil
   do
   if [[ $fil == "$PATH"* ]]; then

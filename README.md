@@ -1,6 +1,10 @@
-$ ./recoll-xapian-helper --markdown --help --help-data
+$ ./recoll-xapian-helper --markdown --author --version --help --help-data
 
 # The Recoll Xapian Helper
+
+Author: Frank Schwidom <schwidom@gmx.net>
+
+Version: 0.3
 
 # Help: (--help)
 <div><code><pre>
@@ -16,6 +20,10 @@ $ ./recoll-xapian-helper --markdown --help --help-data
 -2 ,  --description2
 -d ,  --data : provides the interesting data see --help-data
 -@ ,  --help-data
+-r ,  --data-regex : in case of --data, repeatable, needs regex parameter, filters data output, see --help-regex
+      --max-matches
+-s ,  --regex-sub : in case of --data-regex, repeatable, needs count parameter, chooses the sub expression, see --help-regex
+      --help-regex
 -p ,  --prefix : prefix determines the prefix for non document output lines, default ""
 -z ,  --debug
       --help-bugs
@@ -51,12 +59,19 @@ $ ./recoll-xapian-helper --markdown --help --help-data
   ./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data |
    grep '^url=file' | sed 's+^url=file://\(.*\)+\1+1'
 
+ or 
+ 
+  ./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data --data-regex 'url=file://(.*)' --regex-sub 1
+
  like:
 
   /etc/passwd
 
  At this point you can throw the output in a file, select a specific
  directory whose entries you want to have deleted and reindexed by:
+
+ It is suggested to perform a run through the tool 'uniq' because one file
+ can be indexed more than once if it is an archive.
 
  cat list.txt | recollindex -e # for deleting files
  find . <specific directory> | recollindex -i -f
@@ -66,4 +81,3 @@ $ ./recoll-xapian-helper --markdown --help --help-data
 
 
 </pre></code></div>
-
