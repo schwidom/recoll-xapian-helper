@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([recoll-xapian-helper], [0.1], [schwidom@gmx.net])
+AC_INIT([recoll-xapian-helper], [0.2], [schwidom@gmx.net])
 
 AM_INIT_AUTOMAKE([subdir-objects])
 
@@ -27,5 +27,6 @@ AC_CHECK_HEADER_STDBOOL
 
 # Checks for library functions.
 LIBS=-lxapian
+AC_CHECK_FUNCS([isascii])
 
 AC_OUTPUT

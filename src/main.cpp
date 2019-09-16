@@ -1,4 +1,6 @@
 
+#include "../config.h"
+
 #include <xapian.h>
 
 #include <iostream>
@@ -178,7 +180,7 @@ int main( int argc, char** argv)
   }
 
   if( chkoption( "version")) {
-   std::cout << "Version: 0.1" << std::endl;
+   std::cout << "Version: " << VERSION << std::endl;
    std::cout << std::endl;
   }
 
