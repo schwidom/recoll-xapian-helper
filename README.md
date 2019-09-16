@@ -61,21 +61,24 @@ Version: 0.3
 
  or 
  
-  ./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data --data-regex 'url=file://(.*)' --regex-sub 1
+  ./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data \
+    --data-regex '^url=file://(/.*)' --regex-sub 1 --max-matches 1
 
- like:
+
+ which shows the result like so:
 
   /etc/passwd
 
  At this point you can throw the output in a file, select a specific
- directory whose entries you want to have deleted and reindexed by:
-
- It is suggested to perform a run through the tool 'uniq' because one file
- can be indexed more than once if it is an archive.
+ directory whose entries you want to have deleted and reindexed by (for example):
 
  cat list.txt | recollindex -e # for deleting files
  find . <specific directory> | recollindex -i -f
 
+ It is suggested to perform a run through the tool 'uniq' because one file
+ can be indexed more than once if it is an archive.
+ 
+ see bin/drop-non-existent-files-from-index.sh
 
  Happy indexing.
 

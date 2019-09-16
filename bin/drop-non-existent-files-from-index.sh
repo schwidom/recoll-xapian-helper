@@ -18,7 +18,8 @@ set +x
 PATH="$(realpath "$1")"
 echo "use path $PATH"
 
-./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data --data-regex '^url=file://(/.*)' --regex-sub 1 --max-matches 1 |
+./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data \
+  --data-regex '^url=file://(/.*)' --regex-sub 1 --max-matches 1 |
  "$UNIQ" |
  "$GREP" -F "$PATH" |
  { while read fil
