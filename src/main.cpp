@@ -378,7 +378,7 @@ int main( int argc, char** argv)
 
 
  Because the recoll database can grow very large with tons of documents,
- my current approach to query the database for files can be last very
+ my current approach to query the database for files can last very
  long. I figured out that by questioning via
 
   ./recoll-xapian-helper ... --data-regex '^url=file://(/.*)' \
