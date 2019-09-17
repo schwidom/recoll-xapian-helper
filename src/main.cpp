@@ -306,8 +306,8 @@ int main( int argc, char** argv)
  data is the url. Because the recoll database I have to deal with 
  (version 1.17) is not able to detect deleted files and this way 
  the database increases continuously on every indexing run, I searched
- a way to solve this problem. First by analyzing tools of recoll 
- and xapian tools but none could give me a list of the indexed files 
+ a way to solve this problem. First by analyzing the tools of recoll 
+ and xapian but none of that could give me a list of the indexed files 
  which I could have been used to remove deleted files from the index
  via 'recollindex -e'.
 
