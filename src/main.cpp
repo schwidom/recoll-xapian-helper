@@ -301,14 +301,14 @@ int main( int argc, char** argv)
 
    block_begin();
    std::cout << R"(
- In case of the recoll database the '--data' option outputs a lot of 
- metadata about a specific document. The most interesting part of the
+ The option '--data' outputs a lot of metadata about a specific 
+ document from a recoll database. The most interesting part of that
  data is the url. Because the recoll database I have to deal with 
  (version 1.17) is not able to detect deleted files and this way 
  the database increases continuously on every indexing run, I searched
- a way to solve this problem. First by analyzing recoll and xapian
- tools but no one could give me a list of the indexed files which 
- I could have been used to remove deleted files from the index
+ a way to solve this problem. First by analyzing tools of recoll 
+ and xapian tools but none could give me a list of the indexed files 
+ which I could have been used to remove deleted files from the index
  via 'recollindex -e'.
 
  The recollindex tool is able to delete files from the index but
@@ -363,11 +363,13 @@ int main( int argc, char** argv)
 
    block_begin();
    std::cout << R"(
- Currently for an enduser to have a valuable benefit from the program 
- their has to program some bash magic itself and has at least the relief of
- the existing bin/drop-non-existent-files-from-index.sh tool which contains
- an example usage of the recoll-xapian-helper but is not very well 
- documented yet. 
+
+ Currently, an end user has to program some bash magic himself to gain
+ valuable value from the program, and at least has the convenience of 
+ using the existing tool bin/drop-non-existent-files-from-index.sh.
+
+ This tool contains an example use of the recoll-xapian-helper but
+ is not very vell documented yet.
 
  When I am in the mood I will maybe add some options which allow to 
  search and unindex files without the need of external tools.
