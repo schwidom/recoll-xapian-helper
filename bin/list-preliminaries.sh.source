@@ -1,0 +1,35 @@
+#!/bin/bash
+
+set -u
+
+test ! $# -eq 1 && { echo >&2 "parameter directory is missing, exiting"; exit 1;}
+
+PATH_INSIDE_INDEX_OLD=""
+
+if test -v PATH_INSIDE_INDEX; then
+ PATH_INSIDE_INDEX_OLD="$PATH_INSIDE_INDEX"
+fi
+
+export PATH_INSIDE_INDEX="$(realpath "$1")"
+
+binarytest()
+{
+ NAME="$1"
+ BINARY="$(which "$NAME")"
+ test -z "$BINARY" && { echo >&2 "$NAME not found, exiting"; exit 1;}
+ test ! -e "$BINARY" && { echo >&2 "$BINARY not exists, exiting"; exit 1;}
+ test ! -f "$BINARY" && { echo >&2 "$BINARY is no file, exiting"; exit 1;}
+ test ! -x "$BINARY" && { echo >&2 "$BINARY is not executable, exiting"; exit 1;}
+ echo "$BINARY"
+}
+
+RECOLLINDEX="$(binarytest recollindex)"
+GREP="$(binarytest grep)"
+SED="$(binarytest sed)"
+UNIQ="$(binarytest uniq)"
+
+if test "$PATH_INSIDE_INDEX_OLD" != "$PATH_INSIDE_INDEX"; then
+ echo >&2 "use path inside index: $PATH_INSIDE_INDEX"
+fi
+
+

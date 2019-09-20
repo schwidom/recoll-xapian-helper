@@ -1,35 +1,12 @@
 #!/bin/bash
 
-set -e
-set -u
+source bin/list-preliminaries.sh.source
 
-RECOLLINDEX="$(which recollindex)"
-GREP="$(which grep)"
-SED="$(which sed)"
-UNIQ="$(which uniq)"
-
-set -x
-test -f recoll-xapian-helper
-test -x recoll-xapian-helper
-test -f "$RECOLLINDEX"
-test -x "$RECOLLINDEX"
-set +x
-
-PATH="$(realpath "$1")"
-echo "use path $PATH"
-
-./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data \
-  --data-regex '^url=file://(/.*)' --regex-sub 1 --max-matches 1 |
- "$UNIQ" |
- "$GREP" -F "$PATH" |
+bin/list-non-existing-files-from-index.sh "$@" |
  { while read fil
   do
-  if [[ $fil == "$PATH"* ]]; then
-  if ! test -e $fil; then
    printf "deleting from index: %s\n" "$fil"
    "$RECOLLINDEX" -e "$fil"
-  fi
-  fi
   done 
  }
 
