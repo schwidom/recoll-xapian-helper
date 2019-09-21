@@ -15,7 +15,7 @@ config.status \
 recoll-xapian-helper \
 src/.deps/ \
 src/.dirstamp \
-src/main.o \
+src/*.o \
 stamp-h1 \
 tmp/cleanup-build-files_progress.txt
 

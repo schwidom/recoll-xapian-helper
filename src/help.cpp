@@ -1,41 +1,13 @@
-$ ./recoll-xapian-helper --markdown --author --version --help --help-data --help-future-plans
 
-# The Recoll Xapian Helper
+#include <string>
 
-Author: Frank Schwidom <schwidom@gmx.net>
+#include "help.h"
 
-Version: 0.3
-
-# Help: (--help)
-<div><code><pre>
--h ,  --help : prints help
--a ,  --author
--v ,  --version
--o ,  --dblocation : mandatory parameter, path of xapian database location (directory) 
--c ,  --document-count
--1 ,  --description1
--l ,  --doclength
--w ,  --wdf
--i ,  --docid
--2 ,  --description2
--d ,  --data : provides the interesting data see --help-data
--@ ,  --help-data
--r ,  --data-regex : in case of --data, repeatable, needs regex parameter, filters data output, see --help-regex
-      --max-matches : reduces pattern repetition
-      --data-on-match : outputs data if regex matches
--s ,  --regex-sub : in case of --data-regex, repeatable, needs count parameter, chooses the sub expression, see --help-regex
-      --help-regex
--p ,  --prefix : prefix determines the prefix for non document output lines, default ""
--n ,  --number : outputs the current document number before every data set
--z ,  --debug
-      --help-bugs
-      --markdown : markdown output for help pages
-      --help-future-plans
-</pre></code></div>
-
-# The Data: (--help-data)
-<div><code><pre>
-
+namespace help {
+ 
+ std::string help_data()
+ {
+   return R"(
  The option '--data' outputs a lot of metadata about a specific 
  document from a recoll database. The most interesting part of that
  data is the url. Because the recoll database I have to deal with 
@@ -87,11 +59,13 @@ Version: 0.3
 
  Happy indexing.
 
-</pre></code></div>
+)";
+  
+ };
 
-# Future Plans : (--help-future-plans)
-<div><code><pre>
+ std::string help_future_plans() {
 
+   return R"(
 
  Currently, an end user has to program some bash magic himself to gain
  valuable value from the program, and at least has the convenience of 
@@ -119,4 +93,102 @@ Version: 0.3
  So it could be handy to have an optional duration estimation of the search
  process.
 
-</pre></code></div>
+)";
+
+ }
+
+ std::string help_regex() {
+
+  return R"(
+
+ The options --data-regex and --regex-sub provide to filter the data element which 
+ can be seen when only the --data option is passed. 
+
+ The data contains usually data like:
+
+ url=file:///
+ mtype=application/x-fsdirectory
+ fmtime=01568306963
+ origcharset=
+ fbytes=4096
+ pcbytes=4096
+ dbytes=0
+ sig=40961568306963
+
+ What we want to have is the url.
+
+ If we are not sure whether the url begins every time at the top we should let the regex begin
+ with (^|\n): e.g. "'(^|\n)(.*)'"
+ 
+ example:
+
+ $ ./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data --data-regex '(^|\n)(.*)' --regex-sub 2 | head -n10
+
+ outputs:
+ 
+ url=file:///
+ mtype=application/x-fsdirectory
+ fmtime=01568306963
+ origcharset=
+ fbytes=4096
+ pcbytes=4096
+ dbytes=0
+ sig=40961568306963
+
+ --regex-sub 2 chooses the second submatch from the second open beace th its closing counterpart.
+
+ If we want to only have the urls we choose '(^|\n)(url=.*)' 
+
+ example:
+
+ $ ./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data --data-regex '(^|\n)(url.*)' --regex-sub 2 | head -n 5
+
+ url=file:///
+ url=file:///etc
+ url=file:///etc/wpa_supplicant
+ url=file:///etc/wpa_supplicant/action_wpa.sh
+ url=file:///etc/wpa_supplicant/functions.sh
+
+ now we only want to have the filenames, so we set the second submatch according to:
+
+ ./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data --data-regex '(^|\n)url=file://(/.*)' --regex-sub 2 | head -n 5
+
+ /
+ /etc
+ /etc/wpa_supplicant
+ /etc/wpa_supplicant/action_wpa.sh
+ /etc/wpa_supplicant/functions.sh
+ 
+ 10000 Elements are chosen in 5 sec
+
+ As of now this is a very expensive operation because after the first match of url=file 
+ the program tries to find further matches. With --max-matches 1 we are fine.
+
+ ./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data --data-regex '(^|\n)url=file://(/.*)' --regex-sub 2 --max-matches 1 | head -n 5
+
+ 10000 Elements are chosen in 1 sec
+
+ but much faster is relying on that the url every time is on the first place in the data:
+
+ ./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data --data-regex '^url=file://(/.*)' --regex-sub 1 --max-matches 1 | head -n 5
+
+ 10000 Elements are chosen in 0.1 sec
+
+ The tool bin/drop-non-existent-files-from-index.sh makes use of that.
+
+)";
+
+ }
+
+ std::string help_bugs()
+ {
+  return R"(
+
+ It is currently not clear how to match the url of a recoll document
+ in the xapian database if the name of the original file contains a newline.
+)";
+
+ }
+
+} // namespace help
+

@@ -94,7 +94,8 @@ CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am__dirstamp = $(am__leading_dot)dirstamp
-am_recoll_xapian_helper_OBJECTS = src/main.$(OBJEXT)
+am_recoll_xapian_helper_OBJECTS = src/main.$(OBJEXT) \
+	src/help.$(OBJEXT)
 recoll_xapian_helper_OBJECTS = $(am_recoll_xapian_helper_OBJECTS)
 recoll_xapian_helper_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_@AM_V@)
@@ -264,7 +265,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AUTOMAKE_OPTIONS = foreign
-recoll_xapian_helper_SOURCES = src/main.cpp
+recoll_xapian_helper_SOURCES = src/main.cpp src/help.cpp 
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
@@ -368,6 +369,7 @@ src/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) src/$(DEPDIR)
 	@: > src/$(DEPDIR)/$(am__dirstamp)
 src/main.$(OBJEXT): src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
+src/help.$(OBJEXT): src/$(am__dirstamp) src/$(DEPDIR)/$(am__dirstamp)
 
 recoll-xapian-helper$(EXEEXT): $(recoll_xapian_helper_OBJECTS) $(recoll_xapian_helper_DEPENDENCIES) $(EXTRA_recoll_xapian_helper_DEPENDENCIES) 
 	@rm -f recoll-xapian-helper$(EXEEXT)
@@ -380,6 +382,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/help.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/$(DEPDIR)/main.Po@am__quote@
 
 .cpp.o:

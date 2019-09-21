@@ -1,6 +1,8 @@
 
 #include "../config.h"
 
+#include "help.h"
+
 #include <xapian.h>
 
 #include <iostream>
@@ -37,6 +39,7 @@ int main( int argc, char** argv)
   , HELP_REGEX = 0x10002
   , MAX_MATCHES = 0x10003
   , HELP_FUTURE_PLANS = 0x10004
+  , DATA_ON_MATCH = 0x10005
  };
 
  std::vector<struct option> const long_options_vector 
@@ -55,9 +58,11 @@ int main( int argc, char** argv)
   {"help-data",  no_argument, 0,  '@'},
   {"data-regex",  required_argument, 0,  'r'},
   {"max-matches",  required_argument, 0,  static_cast<int>(NonChars::MAX_MATCHES)},
+  {"data-on-match",  no_argument, 0,  static_cast<int>(NonChars::DATA_ON_MATCH)},
   {"regex-sub",  required_argument, 0,  's'},
   {"help-regex",  no_argument, 0,  static_cast<int>(NonChars::HELP_REGEX)},
   {"prefix",  required_argument, 0,  'p' },
+  {"number",  no_argument, 0,  'n' },
   {"debug",    no_argument, 0,  'z' },
   {"help-bugs",  no_argument, 0,  static_cast<int>(NonChars::HELP_BUGS)},
   {"markdown",  no_argument, 0,  static_cast<int>(NonChars::MARKDOWN)},
@@ -70,8 +75,11 @@ int main( int argc, char** argv)
   { "dblocation", "mandatory parameter, path of xapian database location (directory) "},
   { "data", "provides the interesting data see --help-data"},
   { "prefix", "prefix determines the prefix for non document output lines, default \"\""},
+  { "number", "outputs the current document number before every data set"},
   { "markdown", "markdown output for help pages"},
   { "data-regex", "in case of --data, repeatable, needs regex parameter, filters data output, see --help-regex"},
+  { "max-matches", "reduces pattern repetition"},
+  { "data-on-match", "outputs data if regex matches"},
   { "regex-sub", "in case of --data-regex, repeatable, needs count parameter, chooses the sub expression, see --help-regex"},
  };
 
@@ -105,7 +113,7 @@ int main( int argc, char** argv)
 
    // static struct option long_options[] =
 
-   c = getopt_long(argc, argv, "havo:c1lwi2dr:s:p:@z", long_options_vector.data(), &option_index);
+   c = getopt_long(argc, argv, "havo:c1lwi2dr:s:p:n@z", long_options_vector.data(), &option_index);
 
    if (c == -1)
        break;
@@ -141,12 +149,14 @@ int main( int argc, char** argv)
     case 'i':
     case '2':
     case 'd':
+    case 'n':
     case '@':
     case 'z':
     case static_cast<int>(NonChars::HELP_BUGS):
     case static_cast<int>(NonChars::MARKDOWN):
     case static_cast<int>(NonChars::HELP_REGEX):
     case static_cast<int>(NonChars::HELP_FUTURE_PLANS):
+    case static_cast<int>(NonChars::DATA_ON_MATCH):
 
      exit_if_programmer_forgot_longoption();
      option_set.emplace(found -> name); 
@@ -300,59 +310,7 @@ int main( int argc, char** argv)
    std::cout << markdown_header << "The Data: (--help-data)" << std::endl;
 
    block_begin();
-   std::cout << R"(
- The option '--data' outputs a lot of metadata about a specific 
- document from a recoll database. The most interesting part of that
- data is the url. Because the recoll database I have to deal with 
- (version 1.17) is not able to detect deleted files and this way 
- the database increases continuously on every indexing run, I searched
- a way to solve this problem. First by analyzing the tools of recoll 
- and xapian but none of that could give me a list of the indexed files 
- which I could have been used to remove deleted files from the index
- via 'recollindex -e'.
-
- The recollindex tool is able to delete files from the index but
- you have to know the file location. 
-
- The recoll-xapian-helper helps you to get all urls
- by:
-
-  ./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data |
-   grep '^url=file'
-
- provides files in a form like (if indexed)
-
-  url=file:///etc/passwd
-
- and you can create a list of files by 
-
-  ./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data |
-   grep '^url=file' | sed 's+^url=file://\(.*\)+\1+1'
-
- or 
- 
-  ./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data \
-    --data-regex '^url=file://(/.*)' --regex-sub 1 --max-matches 1
-
-
- which shows the result like so:
-
-  /etc/passwd
-
- At this point you can throw the output in a file, select a specific
- directory whose entries you want to have deleted and reindexed by (for example):
-
- cat list.txt | recollindex -e # for deleting files
- find . <specific directory> | recollindex -i -f
-
- It is suggested to perform a run through the tool 'uniq' because one file
- can be indexed more than once if it is an archive.
- 
- see bin/drop-non-existent-files-from-index.sh
-
- Happy indexing.
-
-)" << std::endl;
+   std::cout << help::help_data();
    block_end();
    std::cout << std::endl;
   }
@@ -362,35 +320,7 @@ int main( int argc, char** argv)
    std::cout << markdown_header << "Future Plans : (--help-future-plans)" << std::endl;
 
    block_begin();
-   std::cout << R"(
-
- Currently, an end user has to program some bash magic himself to gain
- valuable value from the program, and at least has the convenience of 
- using the existing tool bin/drop-non-existent-files-from-index.sh.
-
- This tool contains an example use of the recoll-xapian-helper but
- is not very vell documented yet.
-
- When I am in the mood I will maybe add some options which allow to 
- search and unindex files without the need of external tools.
-
- But to go over bash scripting is of course the most flexible approach.
-
-
- Because the recoll database can grow very large with tons of documents,
- my current approach to query the database for files can last very
- long. I figured out that by questioning via
-
-  ./recoll-xapian-helper ... --data-regex '^url=file://(/.*)' \
-   --regex-sub 1 --max-matches 1
-
- the first 10000 documents took 0.1 seconds. So on a Database with 5 million
- document entries it will take at least 50 seconds.
-
- So it could be handy to have an optional duration estimation of the search
- process.
-
-)" << std::endl;
+   std::cout << help::help_future_plans();
    block_end();
    std::cout << std::endl;
   }
@@ -400,83 +330,7 @@ int main( int argc, char** argv)
    std::cout << markdown_header << "The Regex: (--help-regex)" << std::endl;
 
    block_begin();
-   std::cout << R"(
- The options --data-regex and --regex-sub provide to filter the data element which 
- can be seen when only the --data option is passed. 
-
- The data contains usually data like:
-
- url=file:///
- mtype=application/x-fsdirectory
- fmtime=01568306963
- origcharset=
- fbytes=4096
- pcbytes=4096
- dbytes=0
- sig=40961568306963
-
- What we want to have is the url.
-
- If we are not sure whether the url begins every time at the top we should let the regex begin
- with (^|\n): e.g. "'(^|\n)(.*)'"
- 
- example:
-
- $ ./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data --data-regex '(^|\n)(.*)' --regex-sub 2 | head -n10
-
- outputs:
- 
- url=file:///
- mtype=application/x-fsdirectory
- fmtime=01568306963
- origcharset=
- fbytes=4096
- pcbytes=4096
- dbytes=0
- sig=40961568306963
-
- --regex-sub 2 chooses the second submatch from the second open beace th its closing counterpart.
-
- If we want to only have the urls we choose '(^|\n)(url=.*)' 
-
- example:
-
- $ ./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data --data-regex '(^|\n)(url.*)' --regex-sub 2 | head -n 5
-
- url=file:///
- url=file:///etc
- url=file:///etc/wpa_supplicant
- url=file:///etc/wpa_supplicant/action_wpa.sh
- url=file:///etc/wpa_supplicant/functions.sh
-
- now we only want to have the filenames, so we set the second submatch according to:
-
- ./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data --data-regex '(^|\n)url=file://(/.*)' --regex-sub 2 | head -n 5
-
- /
- /etc
- /etc/wpa_supplicant
- /etc/wpa_supplicant/action_wpa.sh
- /etc/wpa_supplicant/functions.sh
- 
- 10000 Elements are chosen in 5 sec
-
- As of now this is a very expensive operation because after the first match of url=file 
- the program tries to find further matches. With --max-matches 1 we are fine.
-
- ./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data --data-regex '(^|\n)url=file://(/.*)' --regex-sub 2 --max-matches 1 | head -n 5
-
- 10000 Elements are chosen in 1 sec
-
- but much faster is relying on that the url every time is on the first place in the data:
-
- ./recoll-xapian-helper --dblocation ~/.recoll/xapiandb --data --data-regex '^url=file://(/.*)' --regex-sub 1 --max-matches 1 | head -n 5
-
- 10000 Elements are chosen in 0.1 sec
-
- The tool bin/drop-non-existent-files-from-index.sh makes use of that.
-
-)" << std::endl;
+   std::cout << help::help_regex();
    block_end();
    std::cout << std::endl;
   }
@@ -486,10 +340,7 @@ int main( int argc, char** argv)
    std::cout << markdown_header << "The Bugs: (--help-bugs)" << std::endl;
 
    block_begin();
-   std::cout << R"(
- It is currently not clear how to match the url of a recoll document
- in the xapian database if the name of the original file contains a newline.
-)" << std::endl;
+   std::cout << help::help_bugs();
    block_end();
    std::cout << std::endl;
   }
@@ -515,7 +366,9 @@ int main( int argc, char** argv)
  bool opt_wdf = chkoption("wdf");
  bool opt_docid = chkoption("docid");
  bool opt_description2 = chkoption("description2");
+ bool opt_number = chkoption( "number");
  bool opt_data = chkoption("data");
+ bool opt_data_on_match = chkoption("data-on-match");
  bool opt_debug = chkoption("debug");
 
  if( opt_document_count){
@@ -550,8 +403,17 @@ int main( int argc, char** argv)
    regex_vector3.emplace_back( std::make_tuple( re, sub_number_set)); // TODO : piecewise_construct
   }
 
+  long long current_document_number = 0;
+
   for( auto postingIterator = db.postlist_begin( ""); postingIterator != db.postlist_end(""); ++postingIterator)
   {
+
+   ++ current_document_number;
+
+   if( opt_number)
+   {
+    std::cout << prefix << "number: " << OS( opt_debug, current_document_number) << std::endl;
+   }
 
    if( opt_description1) {
     std::cout << prefix << "description1: " << OS( opt_debug, postingIterator.get_description()) << std::endl;
@@ -579,31 +441,9 @@ int main( int argc, char** argv)
    if( opt_data)
    {
 
-    /**
-
-    std::cout << OS( opt_debug, document.get_value( 0)) << std::endl; 
-    std::cout << OS( opt_debug, document.get_value( 1)) << std::endl; 
-    std::cout << OS( opt_debug, document.get_value( 2)) << std::endl; 
-    std::cout << OS( opt_debug, document.get_value( 3)) << std::endl; 
-    std::cout << OS( opt_debug, document.get_value( 4)) << std::endl; 
-    std::cout << OS( opt_debug, document.termlist_count()) << std::endl; 
-    std::cout << OS( opt_debug, document.values_count()) << std::endl; 
-
-    for( auto termlist_value = document.termlist_begin()
-     ; termlist_value != document.termlist_end(); ++termlist_value)
-    {
-     std::cout << OS( opt_debug, *termlist_value) << std::endl;
-    }
-
-    for( auto values_value = document.values_begin()
-     ; values_value != document.values_end(); ++values_value)
-    {
-     std::cout << OS( opt_debug, *values_value) << std::endl;
-    }
-
-    */
-
     auto got_data = std::string( document.get_data()); // working on a copy!
+
+    bool one_regex_matched = false;
 
     for( auto const & regex_tuple : regex_vector3)
     {
@@ -649,12 +489,16 @@ int main( int argc, char** argv)
        std::cout << "debug: regex did not match" << std::endl;
       }
      }
+     else
+     {
+      one_regex_matched = true;
+     }
     }
 
-    if( regex_vector2.empty())
+    if( regex_vector2.empty() || (opt_data_on_match && one_regex_matched) )
     {
      if( opt_debug) { std::cout << prefix << "data: document.get_data()" << std::endl; } 
-     else { std::cout << prefix << " data:" << std::endl; }
+     else { std::cout << prefix << "data:" << std::endl; }
      std::cout << got_data << std::endl; // contains url
     }
    }

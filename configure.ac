@@ -12,8 +12,10 @@ AC_CONFIG_HEADERS([config.h])
 
 # Checks for programs.
 AC_PROG_CXX
+AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_INSTALL
+AC_PROG_MAKE_SET
 
 # Checks for libraries.
 
