@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([recoll-xapian-helper], [0.3], [schwidom@gmx.net])
+AC_INIT([recoll-xapian-helper], [0.4], [schwidom@gmx.net])
 
 AM_INIT_AUTOMAKE([subdir-objects])
 

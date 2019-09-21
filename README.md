@@ -4,7 +4,7 @@ $ ./recoll-xapian-helper --markdown --author --version --help --help-data --help
 
 Author: Frank Schwidom <schwidom@gmx.net>
 
-Version: 0.3
+Version: 0.4
 
 # Help: (--help)
 <div><code><pre>
