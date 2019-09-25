@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 source bin/list-preliminaries.sh.source
 
 bin/list-files-from-index.sh "$@" |
